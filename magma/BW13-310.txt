@@ -1,0 +1,277 @@
+/**********************************************************************
+*
+* Computing the Tate pairings on BW13-310 that are used for G1 
+* membership testing.
+*
+*********************************************************************/
+z:=-2224;
+p:=(z+1)^2*(z^26-z^13+1) div 3-z^27;
+t:=-z^14+z+1;
+r:=Evaluate(CyclotomicPolynomial(78),z);
+w:=-z^26 + z^25 - 2*z^24 + z^23 - 2*z^22 + z^21 - 2*z^20 + z^19 - 2*z^18 + z^17 -
+2*z^16 + z^15 - 2*z^14 + z^13 + z^12 + z^11 + z^10 + z^9 + z^8 + z^7 + z^6 +
+z^5 + z^4 + z^3 + z^2 + z;
+f:=(z^2 - z + 1)*(z^12 - z^11 - 2*z^10 - z^9 + z^8 + 2*z^7 + z^6 - z^5 - 2*z^4 - z^3 + z^2 +2*z + 1) div 3;
+Fp:=GF(p);
+E1:=EllipticCurve([Fp|0,-17]);
+e2:=z^2-z+1;
+e1:=e2 div 3;
+exp1:=(z^26 - z^13 - 3*z^12 - 3*z^11 + 3*z^9 + 3*z^8 - 3*z^6 - 3*z^5 + 3*z^3 + 3*z^2 -2);
+exp2:=exp1 div 3;
+
+/*generate a point P satisfying Lemma 1*/
+P:=E1![507392806220855067094684973327950908236228701396974510753382953087523237645717\
+64401388760043, 40551256738008872546415130744288923711326640264731560957878102\
+6888255923726989248047121031119, 1];
+//P_phi:=E1![w*P[1], P[2],1];
+//assert Order(WeilPairing(P, P_phi, e2)) eq e1;
+
+pp_dbl:=function(T,R, R2);
+    /*2T*/
+    A:=T[1]^2;B:=A/2;C:=A+B;D:=C^2;E:=T[2]^2;F:=T[1]*E;X_2T:=D-2*F;
+    G:=F-X_2T;U0:=C*G;U1:=E^2;Y_2T:=U0-U1;Z_2T:=T[2]*T[3];
+    /*line evaluations*/
+    A:=Z_2T^2;B:=A*Z_2T;C:=A*R[1]-X_2T;C2:=A*R2[1]-X_2T;L1:=C*Z_2T;
+    L3:=C2*Z_2T;U0:=R[2]*B; U1:=R2[2]*B;U2:=3/2*T[1]^2*C;U3:=3/2*T[1]^2*C2;
+    L2:=U0+U2-Y_2T;L4:=U1+U3-Y_2T;
+    T:=[X_2T,Y_2T,Z_2T];
+  return L1,L2, L3, L4, T;
+end function;
+
+pp_add:=function(T, P, R,R2)
+    /*T+P*/
+   A:=T[3]^2;B:=A*T[3];C:=B*P[2]-T[2];D:=A*P[1]-T[1];E:=D^2;F:=D*E;
+   G:=T[1]*E;X:=C^2-2*G-F;U0:=C*(G-X);U1:=T[2]*F;Y:=U0-U1;Z:=T[3]*D;
+  /*line evaluations*/
+   A:=T[3]^3*R[2]-T[2];B:=R[1]*T[3]^2-T[1];C2:=R2[1]*T[3]^2-T[1];
+   U0:=D*A;U1:=C*B;U2:=C*C2;L1:=U0-U1;L2:=Z*B;L3:=U0-U2;L4:=Z*C2;
+   T:=[X,Y,Z];
+   return L1,L2, L3, L4, T;
+end function;
+
+pp_sub:=function(T, P, R,R2)
+    /*T-P*/
+   A:=T[3]^2;B:=A*T[3];C:=-B*P[2]-T[2];D:=A*P[1]-T[1];E:=D^2;F:=D*E;
+   G:=T[1]*E;X:=C^2-2*G-F;U0:=C*( G-X);U1:=T[2]*F;Y:=U0-U1;Z:=T[3]*D;
+  /*line evaluations*/
+  U0:=(R[2]-P[2])*Z;U1:=C*(R[1]-P[1]);U2:=C*(R2[1]-P[1]);L2:=(U0+U1)*Z;
+  L4:=(U0+U2)*Z; L1:=R[1]*Z^2-X;L3:=R2[1]*Z^2-X;
+   T:=[X,Y,Z];
+   return L1,L2, L3, L4, T;
+end function;
+
+pp_dadd:=function(T, P, R,R2)
+    /*2T*/
+    A:=T[1]^2;B:=A/2;C:=A+B;D:=C^2;E:=T[2]^2;F:=T[1]*E;X_2T:=D-2*F;
+    G:=F-X_2T;U0:=C*G;U1:=E^2;Y_2T:=U0-U1;Z_2T:=T[2]*T[3];
+    T2:=[X_2T, Y_2T, Z_2T];
+    /*2T+P*/
+   A:=T2[3]^2;B:=A*T2[3];C:=B*P[2]-T2[2];D:=A*P[1]-T2[1];E:=D^2;F:=D*E;
+   G:=T2[1]*E;X:=C^2-2*G-F;U0:=C*(G-X);U1:=T2[2]*F;Y:=U0-U1;Z:=T2[3]*D;    
+    
+  /*line evaluations*/
+   A:=T2[3]^3*R[2]-T2[2];B:=R[1]*T2[3]^2-T2[1];C2:=R2[1]*T2[3]^2-T2[1];D2:=3/2*T[1]^2*D;
+   U0:=D*A;U1:=C*B;U2:=C*C2;U3:=B*D2;U4:=C2*D2;L1:=U0-U1;L2:=U0+U3;L3:=U0-U2;L4:=U0+U4;
+   T:=[X,Y,Z];
+   return L1,L2, L3, L4, T;
+end function;
+pp_dsub:=function(T, P, R,R2)
+    /*2T*/
+    A:=T[1]^2;B:=A/2;C:=A+B;D:=C^2;E:=T[2]^2;F:=T[1]*E;X_2T:=D-2*F;
+    G:=F-X_2T;U0:=C*G;U1:=E^2;Y_2T:=U0-U1;Z_2T:=T[2]*T[3];
+    T2:=[X_2T, Y_2T, Z_2T];
+    /*2T-P*/
+   A:=T2[3]^2;B:=A*T2[3];C:=-B*P[2]-T2[2];D:=A*P[1]-T2[1];E:=D^2;F:=D*E;
+   G:=T2[1]*E;X:=C^2-2*G-F;U0:=C*(G-X);U1:=T2[2]*F;Y:=U0-U1;Z:=T2[3]*D;    
+    
+  /*line evaluations*/
+   A:=T2[3]^3*R[2]-T2[2];B:=R[1]*T2[3]^2-T2[1];C2:=R2[1]*T2[3]^2-T2[1];D2:=3/2*T[1]^2*D;
+   U0:=D*A;U1:=C*B;U2:=C*C2;U3:=B*D2;U4:=C2*D2;L1:=(U0-U1);L2:=(U0+U3)*(R[1]-P[1]);L3:=U0-U2;
+   L4:=(U0+U4)*(R2[1]-P[1]);
+   T:=[X,Y,Z];
+   return L1,L2, L3, L4, T;
+end function;
+
+pp_qpl:=function(T,R, R2);
+    /*2T*/
+    A:=T[1]^2;B:=A/2;C:=A+B;D:=C^2;E:=T[2]^2;S:=1;
+    F:=T[1]*E;X_2T:=D-2*F;G:=F-X_2T;U0:=C*G;
+    U1:=E^2;Y_2T:=U0-U1;Z_2T:=T[2]*T[3];
+   /*4T*/
+    A:=X_2T^2;B:=A/2;C:=A+B;D:=C^2;E:=Y_2T^2;
+    F:=X_2T*E;X_4T:=D-2*F;G:=F-X_4T;U0:=C*G;
+    U1:=E^2;Y_4T:=U0-U1;Z_4T:=Y_2T*Z_2T;
+
+    /*line evaluations*/
+    A:=Z_2T^2;B:=Z_4T*A;C:=R[1]*A-X_2T; D:=R2[1]*A-X_2T;
+    E:=3/2*T[1]^2*Y_2T;U0:=R[2]*B;U1:=3/2*X_2T^2*C;U2:=3/2*X_2T^2*D;
+    U3:=C*E;U4:=D*E;F:=U0-U1;G:=U0-U2;H:=U0+U3;I:=U0+U4;
+    L1:=B*(F-Y_2T^2);L2:=H-Y_2T^2;L3:=B*(G-Y_2T^2);L4:=I-Y_2T^2;  
+    T:=[X_4T,Y_4T,Z_4T];
+  return L1,L2, L3, L4, T;
+end function;
+
+Miller:=function(P, R, R2)
+  a:=[1,0,1,0,-1,0,0,-1,0,0,0,0,0,1,0,0,-1,0,-1,0,0,0,0];
+    f1:=R[1]-P[1];f2:=1;f3:=R2[1]-P[1];f4:=1; 
+    T:=P;
+    i:=2;
+    while i le #a do
+          if a[i] eq 0 and i lt #a then  
+            L1,L2,L3,L4,T:=pp_qpl(T,R,R2);
+            f1:=f1^4*L1;f2:=(f2^2*L2)^2;
+            f3:=f3^4*L3;f4:=(f4^2*L4)^2;
+            i:=i+1;
+            if a[i] eq 1 then
+                L1,L2,L3,L4,T:=pp_add(T,P,R,R2);
+                f1:=f1*L1;f2:=f2*L2;
+                f3:=f3*L3;f4:=f4*L4;
+            elif a[i] eq -1 then
+                L1,L2,L3,L4,T:=pp_sub(T,P,R,R2);
+                f1:=f1*L1;f2:=f2*L2;
+                f3:=f3*L3;f4:=f4*L4; 
+            end if;
+       i:=i+1;   
+       elif a[i] eq 1 then   
+            L1,L2,L3,L4,T:=pp_dadd(T,P,R,R2);
+            f1:=f1^2*L1;f2:=f2^2*L2;
+            f3:=f3^2*L3;f4:=f4^2*L4;
+            i:=i+1;
+       elif a[i] eq -1 then   
+            L1,L2,L3,L4,T:=pp_dsub(T,P,R,R2);
+            f1:=f1^2*L1;f2:=f2^2*L2;
+            f3:=f3^2*L3;f4:=f4^2*L4;   
+            i:=i+1;
+      else
+            L1,L2,L3,L4,T:=pp_dbl(T,R,R2);
+            f1:=f1^2*L1;f2:=f2^2*L2;
+            f3:=f3^2*L3;f4:=f4^2*L4;
+            i:=i+1;                    
+      end if;
+   end while; 
+   return f1,f2,f3,f4,T;
+end function;
+
+Tate_Pairing:=function(P, R);
+    R2:=E1![w^2*R[1],R[2],1];
+    f1,f2,f3,f4,T:=Miller(P,R,R2);
+    if f1 eq 0 or f2 eq 0 or f3 eq 0 or f4 eq 0 then 
+        /* if fi=1, then the point is invaild. Thus, we give a random value of f1 and f2 ( not 1) such that it can not pass the testing */
+        f1:=2;f2:=2;
+        return f1, f2;
+    else
+        L1:=f1/f2;
+        L2:=f3/f4;
+        f1:=L1^exp2;
+        f2:=L2^exp1;
+    return f1,f2;
+    end if;
+end function;
+
+repeat
+    R:=r*Random(E1);
+    R2:=E1![w*R[1], R[2],1];
+    f1:=WeilPairing(P, R, e2);
+    f2:=WeilPairing(P, R2, e2);
+until Order(R) eq e2 and f1 ne 1 and f2 ne 1;
+
+test_num:=100;//the number of testing
+
+/********************************************************************
+*
+* Checking the two pairings are bilinear and non-degenerate. It should 
+* be noted that the pairings can be bilineartiy under the condition that
+* the order of the first pairing point P is equal to e2; Othewise, the 
+* point at Miller loop might be equal to the identity point. Thus, 
+* we select a random  scalar m under the condition that gcd(m,eq)=1.
+*
+********************************************************************/
+repeat
+    m:=Random(2, e2-1);     
+until GCD (m, e2) eq 1;
+
+f1,f2:=Tate_Pairing(m*P,R);
+f3,f4:=Tate_Pairing(P,m*R);
+if f1 ne 1 and f2 ne 1 and f1 eq f3 and f2 eq f4 then
+    printf "bilineartiy and non-degeneracy:CORRECT!\n";
+else
+    printf "bilineartiy and and non-degeneracy: ERROR!\n";
+end if;
+
+
+/**********************************************************************
+*
+* Checking that the point of order r can pass the testing.
+*
+**********************************************************************/
+sum:=0;
+for i:=1 to test_num do
+    repeat
+        R:=e2*Random(E1);
+    until R ne Id(E1);
+    f1,f2:=Tate_Pairing(P,R);
+    if f1 ne 1 or f2 ne 1 then
+        printf "Valid point can not pass the testing:ERROR!\n";
+        break;
+    else 
+        sum:=sum+1;
+    end if;
+end for;
+if sum eq test_num then
+        printf "Valid point can pass the testing:CORRECT!\n";
+end if;
+
+
+
+/**********************************************************************
+*
+* Checking that the point of order 3r cannot pass the testing.It should be
+* noted that this testing is improtant to verify the correctness of our 
+* algorithm as the  the point of order 3r can easily pass the testing if we
+* replcae the exp2 by exp1. In other words, these points is the “best”
+* forgeries, which looks like a valid point.
+*
+**********************************************************************/
+sum:=0;
+for i:=1 to test_num do
+    repeat
+        R:=e1*Random(E1);
+        Q1:=r*R;
+        Q2:=3*R;
+    until R ne Id(E1) and Q1 ne Id(E1) and Q2 ne Id(E1);
+    f1,f2:=Tate_Pairing(P,R);
+    if f1 eq 1 and f2 eq 1 then
+        printf "Invalid point of order 3r also pass the testing:ERROR!\n";
+        break;
+    else 
+        sum:=sum+1;
+    end if;
+end for;
+if sum eq test_num then
+        printf "Invalid point of order 3r cannot pass the testing:CORRECT!\n";
+end if;
+
+
+/**********************************************************************
+*
+* Checking that a random point with not order r cannot pass the testing.
+*  
+**********************************************************************/
+
+sum:=0;
+for i:=1 to test_num do
+    repeat
+        R:=Random(E1);
+        Q:=r*R;
+    until  Q ne Id(E1);
+    f1,f2:=Tate_Pairing(P,R);
+    if f1 eq 1 and f2 eq 1 then
+        printf "A random invalid point pass the testing:ERROR!\n";i;
+        break;
+    else 
+        sum:=sum+1;
+    end if;
+end for;
+if sum eq test_num then
+    printf "A random invalid point can not pass the testing:CORRECT!\n";
+end if;

@@ -1,0 +1,187 @@
+/*************************************************************************************
+* Revisiting subgroup membership testing on pairing-friendly curves via the Tate pairing.
+*  This code is used to count the cost of subgroup membership testing on  different families, including BLS12, BW13 and BW19.
+*  m: multiplication in F_p, m_u: multiplication in F_p without reduction,
+*  s: squaringin in F_p,     s_u: squaringin in F_p without reduction,
+*  r: redcution in F_p,      a: addition in F_p.
+*  z the seed of pairing-friendly curve;
+* exp_z[]: exp_z[1] and exp_z[2] represent the number of multiplication and squaring for the group exponetiation by the seed z, respectively.
+* n[]: n[1], n[2], n[3], n[4], n[5], n[6] and n[7]  represent the number of SDBL, SADD, SSUB, SDADD, SDSUB, SDSUBL and 
+* SQPL at the shared Miller loop, respectively.
+* exp2: the second pairing exponent
+**************************************************************************************/ 
+
+//[m, m_u, s, s_u, a, r]
+SDBL:=[11, 4, 8, 1, 15, 3];
+SADD:=[15, 5, 3, 0, 15, 3];
+SSUB:=[14, 5, 4, 0, 14, 3];
+SDADD:=[16, 8, 10, 1, 26, 6];
+SDSUB:=[18, 8, 10, 1, 26, 6];
+SDSUBL:=[6, 0, 5, 0, 2, 0];
+SQPL:=[14, 7, 15, 2, 28, 6];
+
+//[m, mu, s, a, r]
+SDBL_PRE:=[6,0,4,5,0];
+SADD_PRE:=[6,0,0,4,0];
+SSUB_PRE:=[6,0,0,4,0];
+SDADD_PRE:=[4,3,4,9,2];
+SDSUB_PRE:=[6,3,4,9,2];
+SDSUBL_PRE:=[2,0,4,2,0];
+SQPL_PRE:=[8,0,8,7,0];
+
+ML_cost:=function(n)
+    sum:=[0, 0, 0, 0, 3, 0];//Eq.(7) requires 3a
+    for i:=1 to 6 do
+        sum[i]:=sum[i]+n[1]*SDBL[i]+n[2]*SADD[i]+n[3]*SSUB[i]+n[4]*SDADD[i]+n[5]*SDSUB[i]+n[6]*SDSUBL[i]+n[7]*SQPL[i];
+    end for;
+    return sum;
+end function;
+
+ML_PRE_cost:=function(n)
+    sum:=[0, 0, 0, 3, 0];//Eq.(7) requires 3a
+    for i:=1 to 5 do
+       sum[i]:=sum[i]+n[1]*SDBL_PRE[i]+n[2]*SADD_PRE[i]+n[3]*SSUB_PRE[i]+n[4]*SDADD_PRE[i]+n[5]*SDSUB_PRE[i]+n[6]*SDSUBL_PRE[i]+n[7]*SQPL_PRE[i];
+    end for;
+    return sum;
+end function; 
+
+FE_cost:=function(family, e2, exp_z, w);
+   //FE costs sum[1]*m+sum[2]*s
+    sum:=[5,0];//Eq.(8) requires 5m+i, here we ignore i but we will collect it at the end step.
+    nbits_e2:=#IntegerToSequence(e2, 2);
+    if family eq "BLS12" then
+       sum[1]:=sum[1]+4+5*exp_z[1]+(nbits_e2-1)div (w+1)+2^(w-1)-1;
+       sum[2]:=1+5*exp_z[2]+nbits_e2;
+    elif family eq "BLS24-315" then
+         sum[1]:=sum[1]+2*((nbits_e2-1)div (w+1)+2^(w-1)-1);
+         sum[2]:=2*nbits_e2;     
+    elif family eq "BLS24-509" then
+         sum[1]:=sum[1]+4+9*exp_z[1]+(nbits_e2-1)div (w+1)+2^(w-1)-1;
+         sum[2]:=1+9*exp_z[2]+ nbits_e2;
+    elif family eq "BLS48" then
+         sum[1]:=sum[1]+4+17*exp_z[1]+(nbits_e2-1)div (w+1)+2^(w-1)-1;
+         sum[2]:=1+17*exp_z[2]+nbits_e2;
+    elif family eq "BW13" then
+         sum[1]:=sum[1]+11+26*exp_z[1]+(nbits_e2-1)div (w+1)+2^(w-1)-1;
+         sum[2]:=3+26*exp_z[2]+nbits_e2;
+    elif family eq "BW19" then
+         sum[1]:=sum[1]+15+38*exp_z[1]+(nbits_e2-1)div (w+1)+2^(w-1)-1;
+         sum[2]:=3+38*exp_z[2]+ nbits_e2;
+   end if;
+    return sum;
+end function;
+ 
+
+/**************************************************************************************/ 
+
+printf("BLS12-381:\n");
+family:="BLS12";
+n:=[0,2,0,3,0,0,30];
+z:=-(2^63 + 2^62 + 2^60 + 2^57 + 2^48 + 2^16);
+p:=(z-1)^2*(z^4-z^2+1) div 3+z;
+exp2:=(p-1) div (Abs(z-1));
+exp_z:=[5,63];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BLS12-381 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BLS12-381 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BLS12-381 is i + %om + %os.\n",c[1], c[2];
+printf "the cost of smt without precomputation on BLS12-381 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BLS12-381 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
+
+printf("BLS12-446:\n");
+family:="BLS12";
+n:=[0,2,0,4,0,0,35];
+z:=-(2^74 + 2^73 + 2^63 + 2^57 + 2^50 + 2^17 + 1);
+p:=(z-1)^2*(z^4-z^2+1) div 3+z;
+exp2:=(p-1) div (Abs(z-1));
+exp_z:=[6,74];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BLS12-446is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BLS12-446 is %om + %omu + %os +  %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BLS12-446 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BLS12-446 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BLS12-446 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
+
+
+printf("BW13-310:\n");
+family:="BW13";
+n:=[0,2,2,0,2,0,10];
+z:=-2224;
+p:=(z+1)^2*(z^26-z^13+1) div 3-z^27;
+exp2:=(p-1) div (z^2-z+1);
+exp_z:=[3,11];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BW13-310 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BW13-310 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BW13-310 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BW13-310 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BW13-310 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
+
+printf("BW19-286:\n");
+family:="BW19";
+n:=[1,2,3,1,0,0,6];
+z:=-145;
+p:=(z+1)^2*(z^38-z^19+1)div 3-z^39;
+exp2:=(p-1) div (z^2-z+1);
+exp_z:=[2,7];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BW19-286 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BW19-286 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BW19-286 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BW19-286 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BW19-286 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
+
+printf("BLS24-315:\n");
+family:="BLS24-315";
+n:=[1,1,1,1,0,1,14];
+z:= -2^32 + 2^30 + 2^21 + 2^20 + 1;
+p:=(z-1)^2*(z^8-z^4+1) div 3+z;
+exp2:=(p-1) div (Abs(z-1));
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BLS24-315 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BLS24-315 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BLS24-315 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BLS24-315 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BLS24-315 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
+printf("BLS24-509:\n");
+family:="BLS24-509";
+n:=[0,0,0,2,1,0,24];
+z:= -2^51 - 2^28 + 2^11 - 1;
+p:=(z-1)^2*(z^8-z^4+1) div 3+z;
+exp2:=(p-1) div (Abs(z-1));
+exp_z:=[9, 50];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BLS24-509 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BLS24-509 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BLS24-509 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BLS24-509 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BLS24-509 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];;
+
+
+printf("BLS48-575:\n");
+family:="BLS48";
+n:=[1,0,3,0,1,0,15];
+z:=2^32 - 2^18 - 2^10 - 2^4;
+p:=(z-1)^2*(z^16-z^8+1) div 3+z;
+exp2:=(p-1) div (Abs(z-1));
+exp_z:=[9, 31];
+a:=ML_cost(n);
+b:=ML_PRE_cost(n);
+c:=FE_cost(family, exp2, exp_z, 4);
+printf "the cost of ML on BLS48-575 is %om + %om_u + %os + %os_u + %oa + %or.\n", a[1],a[2], a[3], a[4],a[5], a[6];
+printf "the cost of ML_PRE on BLS48-575 is %om + %omu + %os + %oa + %or.\n", b[1],b[2], b[3],b[4], b[5];
+printf "the cost of FE on BLS48-575 is i + %om + %os.\n",c[1],c[2];
+printf "the cost of smt without precomputation on BLS48-575 is i + %om + %om_u + %os + %os_u + %oa + %or.\n", a[1]+c[1],a[2], a[3]+c[2], a[4],a[5], a[6];
+printf "the cost of smt with precomputation on BLS48-575 is  i + %om + %omu + %os + %oa + %or.\n",b[1]+c[1],b[2],b[3]+c[2], b[4], b[5];
