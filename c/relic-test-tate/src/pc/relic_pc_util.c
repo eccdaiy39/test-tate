@@ -97,35 +97,25 @@ int g1_is_valid(const g1_t a) {
 				/* Formulas from "Co-factor clearing and subgroup membership
 				 * testing on pairing-friendly curves" by El Housni, Guillevic,
 				 * Piellard. https://eprint.iacr.org/2022/352.pdf */
-
 				case EP_B12:
-					g1_mul_any(u, a, n);
-					g1_mul_any(u, u, n);
-					g1_neg(u,u);
-					ep_psi(v, a);
-					ep_psi(v, v);
-					r = g1_on_curve(a) && (g1_cmp(v, u) == RLC_EQ);
-					break;
 				case EP_B24:
-					g1_mul_any(u, a, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_neg(u,u);
-					ep_psi(v, a);
-					ep_psi(v, v);
-					r = g1_on_curve(a) && (g1_cmp(v, u) == RLC_EQ);
-					break;
 				case EP_B48:
+					/* Check [\psi(P) == [z^2 - 1]P. */
 					g1_mul_any(u, a, n);
 					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_mul_any(u, u, n);
-					g1_neg(u,u);
+					if (ep_curve_is_pairf() == EP_B24) {
+						/* Check [\psi(P) == [z^4 - 1]P. */
+						g1_mul_any(u, u, n);
+						g1_mul_any(u, u, n);
+					}
+					if (ep_curve_is_pairf() == EP_B48) {
+						/* Check [\psi(P) == [z^8 - 1]P. */
+						g1_mul_any(u, u, n);
+						g1_mul_any(u, u, n);
+						g1_mul_any(u, u, n);
+						g1_mul_any(u, u, n);
+					}
+					g1_neg(u, u);
 					ep_psi(v, a);
 					ep_psi(v, v);
 					r = g1_on_curve(a) && (g1_cmp(v, u) == RLC_EQ);
