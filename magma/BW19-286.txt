@@ -13,8 +13,8 @@ Fp:=GF(p);
 E1:=EllipticCurve([Fp|0,31]);
 e2:=z^2-z+1;
 e1:=e2 div 3;
-exp1:=(p-1) div e1;
-exp2:=(p-1) div e2;
+exp2:=(p-1) div e1;
+exp1:=(p-1) div e2;
 
 /*generate a point P satisfying Lemma 1*/
 P:=E1![562214547103698784902766353027412337402879364278102088894392568910586765748193\
@@ -159,8 +159,8 @@ Tate_Pairing:=function(P, R);
     else
         L1:=f1/f2;
         L2:=f3/f4;
-        f1:=L1^exp2;
-        f2:=L2^exp1;
+        f1:=L1^exp1;
+        f2:=L2^exp2;
     return f1,f2;
     end if;
 end function;
