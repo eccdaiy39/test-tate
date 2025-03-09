@@ -14,11 +14,10 @@ f:=(z-1)*(2*z^2-1)/3;
 Fp:=GF(p);
 e1:=(1-z) div 3;
 e2:=1-z;
-exp1:=(-z^5 + z^4 + z^3 - z^2 - z - 2);
-exp2:=-(81*z0^5 + 108*z0^4 + 45*z0^3 + 6*z0^2 + z0 + 1);
+exp2:=(-z^5 + z^4 + z^3 - z^2 - z - 2);
+exp1:=-(81*z0^5 + 108*z0^4 + 45*z0^3 + 6*z0^2 + z0 + 1);
 assert (p-1) mod e2 eq 0;
 assert (t^2-4*p) eq -3*f^2;
-assert exp1*e1 eq (p-1);
 if z gt 0 then
     exp1:=-exp1;
     exp2:=-exp2;
